@@ -2,57 +2,40 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>AR Event - Stable</title>
-    
-    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-    
     <style>
-      body { margin: 0; overflow: hidden; }
-      
-      /* Start Screen UI */
       #start-screen {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: black; z-index: 9999;
         display: flex; flex-direction: column; align-items: center; justify-content: center;
-        color: white; font-family: sans-serif;
+        color: white;
       }
-      button { 
-        padding: 15px 30px; font-size: 20px; margin-top: 20px; 
-        background: #ff4081; color: white; border: none; border-radius: 5px; 
-      }
-      
-      /* Debug Box */
+      button { padding: 15px 30px; font-size: 20px; margin-top: 20px; }
+      /* DEBUG CONSOLE ON SCREEN */
       #debug-log {
-        position: fixed; bottom: 0; left: 0; width: 100%; height: 100px;
-        background: rgba(0, 0, 0, 0.7); color: yellow; 
+        position: fixed; top: 0; left: 0; width: 100%; height: 200px;
+        background: rgba(255, 0, 0, 0.5); color: white; 
         pointer-events: none; z-index: 10000; overflow-y: scroll;
-        font-family: monospace; font-size: 12px; padding: 5px;
+        font-family: monospace; font-size: 12px;
       }
-      
-      /* Hide the video element so it doesn't mess up the page */
-      video { display: none; }
     </style>
   </head>
   <body>
-
-    <div id="debug-log">System Ready... waiting for user.</div>
+    <div id="debug-log">Waiting for logs...</div>
 
     <div id="start-screen">
-      <h1>AR Experience</h1>
-      <button id="start-button">START</button>
+      <h1>AR Event</h1>
+      <button id="start-button">Start Experience</button>
     </div>
 
     <a-scene 
-      mindar-image="imageTargetSrc: targets.mind; autoStart: false;" 
-      color-space="sRGB" 
-      renderer="colorManagement: true, physicallyCorrectLights" 
-      vr-mode-ui="enabled: false" 
-      device-orientation-permission-ui="enabled: false">
+      mindar-image="imageTargetSrc: ./targets.mind; autoStart: false;" 
+      color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" 
+      vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
       
       <a-assets>
-        <video id="art-video" src="video.mp4" preload="auto" loop crossorigin="anonymous" playsinline webkit-playsinline></video>
+        <video id="art-video" src="./video.mp4" preload="auto" loop crossorigin="anonymous" playsinline webkit-playsinline></video>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
@@ -63,8 +46,14 @@
     </a-scene>
 
     <script>
+      // ERROR LOGGING SCRIPT
       const logBox = document.getElementById('debug-log');
-      function log(msg) { logBox.innerHTML += "<br>" + msg; }
+      window.onerror = function(message, source, lineno, colno, error) {
+        logBox.innerHTML += `<br>ERROR: ${message}`;
+      };
+      console.error = function(message) {
+        logBox.innerHTML += `<br>CONSOLE ERR: ${message}`;
+      }
 
       const startButton = document.getElementById('start-button');
       const startScreen = document.getElementById('start-screen');
@@ -72,32 +61,23 @@
       const video = document.getElementById('art-video');
 
       startButton.addEventListener('click', () => {
-        log("Button clicked.");
+        logBox.innerHTML += "<br>Button clicked. Starting AR...";
         startScreen.style.display = 'none';
+        video.play(); video.pause();
         
-        // 1. Wake up the video
-        video.play().then(() => {
-          video.pause();
-          log("Video permission granted.");
-        }).catch((e) => {
-          log("Video error: " + e);
-        });
-
-        // 2. Start AR
-        if (sceneEl) {
-          sceneEl.setAttribute('mindar-image', 'autoStart: true');
-          log("AR Engine Starting...");
-        } else {
-          log("CRITICAL: Scene not found.");
-        }
+        // Check if scene loaded
+        if (!sceneEl) { logBox.innerHTML += "<br>Scene element not found!"; }
+        
+        sceneEl.setAttribute('mindar-image', 'autoStart: true');
+        logBox.innerHTML += "<br>AR Engine requested to start.";
       });
 
       sceneEl.addEventListener("arReady", (event) => {
-        log("SUCCESS: Camera active! Point at image.");
+        logBox.innerHTML += "<br>SUCCESS: AR System Ready!";
       });
       
       sceneEl.addEventListener("arError", (event) => {
-        log("ERROR: Engine failed. Check targets.mind path or format.");
+        logBox.innerHTML += "<br>CRITICAL: AR Failed to start. Check targets.mind path.";
       });
     </script>
   </body>
