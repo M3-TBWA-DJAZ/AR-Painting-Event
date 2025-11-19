@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AR Art Event</title>
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+    <style>
+      /* This controls the "Start Experience" Overlay */
+      #start-screen {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.9);
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        font-family: sans-serif;
+      }
+      #start-button {
+        padding: 15px 30px;
+        font-size: 20px;
+        background: #ff4081;
+        color: white;
+        border: none;
+        border-radius: 50px;
+        cursor: pointer;
+        margin-top: 20px;
+        font-weight: bold;
+      }
+      /* Hide the default "Scanning" ring for a cleaner look */
+      .mindar-ui-scanning { display: none !important; }
+    </style>
+  </head>
+  <body>
+
+    <div id="start-screen">
+      <h1>Magic Art Gallery</h1>
+      <p>Point your camera at the painting</p>
+      <button id="start-button">Start Experience</button>
+    </div>
+
+    <a-scene
+      mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; filterMinCF:0.0001; filterBeta: 0.001;"
+      color-space="sRGB"
+      renderer="colorManagement: true, physicallyCorrectLights"
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: false">
+
+      <a-assets>
+        <video id="art-video" src="./video.mp4" preload="auto" loop="true" crossorigin="anonymous" playsinline webkit-playsinline></video>
+      </a-assets>
+
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+      <a-entity mindar-image-target="targetIndex: 0">
+        <a-plane
+          src="#art-video"
+          position="0 0 0"
+          height="1" width="1"
+          rotation="0 0 0">
+        </a-plane>
+      </a-entity>
+    </a-scene>
+
+    <script>
+      const startButton = document.getElementById('start-button');
+      const startScreen = document.getElementById('start-screen');
+      const sceneEl = document.querySelector('a-scene');
+      const video = document.getElementById('art-video');
+      const arSystem = sceneEl.systems["mindar-image-system"];
+
+      // 1. User clicks "Start"
+      startButton.addEventListener('click', () => {
+        // Hide the overlay
+        startScreen.style.display = 'none';
+
+        // Unlock audio/video permissions (Crucial for iOS)
+        video.play();
+        video.pause();
+        video.currentTime = 0;
+
+        // Start the AR engine
+        sceneEl.setAttribute('mindar-image', 'autoStart: true');
+      });
+
+      // 2. When the painting is detected
+      const target = document.querySelector('[mindar-image-target]');
+      target.addEventListener("targetFound", event => {
+        console.log("Art found!");
+        video.play(); // Play video
+        video.muted = false; // Turn on sound
+      });
+
+      // 3. When the camera moves away
+      target.addEventListener("targetLost", event => {
+        console.log("Art lost!");
+        video.pause(); // Pause video
+        video.currentTime = 0; // Optional: Reset to start
+      });
+    </script>
+  </body>
+</html>
