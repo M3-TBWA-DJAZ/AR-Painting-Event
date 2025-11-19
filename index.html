@@ -2,35 +2,48 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <title>AR Event v3.6</title>
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    
     <style>
+      body { margin: 0; overflow: hidden; }
       #start-screen {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: black; z-index: 9999;
         display: flex; flex-direction: column; align-items: center; justify-content: center;
-        color: white;
+        color: white; font-family: sans-serif;
       }
-      button { padding: 15px 30px; font-size: 20px; margin-top: 20px; }
-      /* DEBUG CONSOLE ON SCREEN */
+      button { 
+        padding: 15px 30px; font-size: 20px; margin-top: 20px; 
+        background: #00D1B2; color: white; border: none; border-radius: 5px; 
+      }
+      #version-badge {
+        position: fixed; top: 10px; right: 10px;
+        background: rgba(0, 255, 255, 0.8); color: black; /* CYAN BADGE */
+        padding: 5px 10px; font-weight: bold; font-family: monospace;
+        z-index: 1000; border-radius: 4px;
+      }
       #debug-log {
-        position: fixed; top: 0; left: 0; width: 100%; height: 200px;
-        background: rgba(255, 0, 0, 0.5); color: white; 
+        position: fixed; bottom: 0; left: 0; width: 100%; height: 100px;
+        background: rgba(0, 0, 0, 0.5); color: #00FF00; 
         pointer-events: none; z-index: 10000; overflow-y: scroll;
-        font-family: monospace; font-size: 12px;
+        font-family: monospace; font-size: 12px; padding: 5px;
       }
     </style>
   </head>
   <body>
-    <div id="debug-log">Waiting for logs...</div>
+
+    <div id="version-badge">v3.6 (Landscape)</div>
+    <div id="debug-log">System Ready. Waiting...</div>
 
     <div id="start-screen">
-      <h1>AR Event</h1>
-      <button id="start-button">Start Experience</button>
+      <h1>Magic Art</h1>
+      <button id="start-button">START EXPERIENCE</button>
     </div>
 
     <a-scene 
-      mindar-image="imageTargetSrc: ./targets.mind; autoStart: false;" 
+      mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; filterMinCF:0.0001; filterBeta: 0.001;" 
       color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" 
       vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
       
@@ -41,43 +54,42 @@
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
       <a-entity mindar-image-target="targetIndex: 0">
-        <a-plane src="#art-video" position="0 0 0" height="1" width="1" rotation="0 0 0"></a-plane>
+        <a-plane 
+          src="#art-video" 
+          position="0 0 0" 
+          height="0.5625" 
+          width="1" 
+          rotation="0 0 0"
+          opacity="1">
+        </a-plane>
       </a-entity>
     </a-scene>
 
     <script>
-      // ERROR LOGGING SCRIPT
       const logBox = document.getElementById('debug-log');
-      window.onerror = function(message, source, lineno, colno, error) {
-        logBox.innerHTML += `<br>ERROR: ${message}`;
-      };
-      console.error = function(message) {
-        logBox.innerHTML += `<br>CONSOLE ERR: ${message}`;
-      }
+      function log(msg) { logBox.innerHTML += "<br>" + msg; }
 
       const startButton = document.getElementById('start-button');
       const startScreen = document.getElementById('start-screen');
       const sceneEl = document.querySelector('a-scene');
       const video = document.getElementById('art-video');
+      const target = document.querySelector('[mindar-image-target]');
 
       startButton.addEventListener('click', () => {
-        logBox.innerHTML += "<br>Button clicked. Starting AR...";
         startScreen.style.display = 'none';
-        video.play(); video.pause();
-        
-        // Check if scene loaded
-        if (!sceneEl) { logBox.innerHTML += "<br>Scene element not found!"; }
-        
+        video.play().then(() => { video.pause(); video.currentTime = 0; }).catch((e) => { log("Perms Error: " + e); });
         sceneEl.setAttribute('mindar-image', 'autoStart: true');
-        logBox.innerHTML += "<br>AR Engine requested to start.";
+        log("AR Engine Starting...");
       });
 
-      sceneEl.addEventListener("arReady", (event) => {
-        logBox.innerHTML += "<br>SUCCESS: AR System Ready!";
+      target.addEventListener("targetFound", event => {
+        log("Found! Playing...");
+        video.play();
       });
-      
-      sceneEl.addEventListener("arError", (event) => {
-        logBox.innerHTML += "<br>CRITICAL: AR Failed to start. Check targets.mind path.";
+
+      target.addEventListener("targetLost", event => {
+        log("Lost. Pausing...");
+        video.pause();
       });
     </script>
   </body>
