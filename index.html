@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>Priority Fix v13.0</title>
+    <title>Direct Start v14.0</title>
     
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
@@ -24,7 +24,6 @@
         text-align: center; color: white;
       }
 
-      /* PROGRESS BAR */
       #loader-container {
         width: 80%; height: 10px; background: #333; border-radius: 5px;
         margin-top: 20px; overflow: hidden;
@@ -121,47 +120,50 @@
       };
       xhr.send(); 
 
-      // --- 2. START LOGIC (RE-ORDERED) ---
+      // --- 2. START LOGIC ---
       btn.addEventListener('click', async () => {
         
-        // PRIORITY 1: WAKE VIDEO (Must happen instantly)
-        log("1. Waking Video Engine...");
+        // A. WAKE VIDEO
+        log("1. Waking Video...");
         const v = document.getElementById('v-kites');
         try {
-          // Temporarily mute to satisfy autoplay policy
-          v.muted = true; 
-          await v.play();
-          v.pause();
-          v.currentTime = 0;
-          log("✅ Video Engine Ready.");
-        } catch (e) {
-          log("⚠️ Video Warning: " + e.message);
-          // If this fails, we proceed anyway, but sound might be blocked later
-        }
+          v.muted = true; await v.play(); v.pause(); v.currentTime = 0;
+          log("✅ Video Ready.");
+        } catch (e) { log("⚠️ Video Warn: " + e.message); }
 
-        // PRIORITY 2: REQUEST CAMERA
-        log("2. Requesting Camera...");
-        btn.innerText = "ALLOW CAMERA...";
-        
+        // B. REQUEST CAMERA
+        log("2. Requesting Permission...");
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
           log("✅ Permission Granted.");
           stream.getTracks().forEach(track => track.stop());
         } catch (err) {
           log("❌ Permission Denied.");
-          alert("Camera Permission Required");
+          alert("Permission Required");
           return;
         }
 
-        // PRIORITY 3: START SCENE
-        log("3. Starting AR Scene...");
+        // C. DIRECT START (The Fix)
+        log("3. Starting AR Engine...");
         document.getElementById('start-screen').style.display = 'none';
-        sceneEl.setAttribute('mindar-image', 'autoStart: true');
+
+        // Wait a tiny bit for the DOM to settle
+        setTimeout(() => {
+          const mindSystem = sceneEl.systems["mindar-image-system"];
+          if (mindSystem) {
+            mindSystem.start(); // <--- DIRECT COMMAND
+            log("🚀 Start Command Sent.");
+          } else {
+            log("❌ Error: AR System not found.");
+            // Fallback
+            sceneEl.setAttribute('mindar-image', 'autoStart: true');
+          }
+        }, 100);
       });
 
       // --- 3. AR EVENTS ---
       sceneEl.addEventListener("arReady", () => { 
-        log("🚀 AR CAMERA STARTED! Point at Kites."); 
+        log("📷 CAMERA ACTIVE! Scan now."); 
       });
       
       sceneEl.addEventListener("arError", (e) => {
@@ -172,9 +174,7 @@
       target.addEventListener("targetFound", () => {
         log("✅ TARGET FOUND!");
         const v = document.getElementById('v-kites');
-        // Unmute when found
-        v.muted = false; 
-        v.play();
+        v.muted = false; v.play();
       });
     </script>
   </body>
