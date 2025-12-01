@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>Gallery v9.2 (Timer)</title>
+    <title>Single Target v10.0</title>
     
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
@@ -13,14 +13,14 @@
 
       #version-badge {
         position: fixed; top: 10px; right: 10px;
-        background: #00FF00; color: black;
+        background: cyan; color: black;
         padding: 5px 10px; font-weight: bold; font-family: monospace;
-        z-index: 10001; border: 2px solid white;
+        z-index: 10001; border: 2px solid black;
       }
 
       /* DEBUG LOG */
       #debug-log {
-        position: fixed; top: 0; left: 0; width: 100%; height: 80px;
+        position: fixed; top: 0; left: 0; width: 100%; height: 100px;
         background: rgba(0, 0, 0, 0.7); color: lime; 
         pointer-events: none; z-index: 10000; 
         overflow-y: scroll; font-family: monospace; font-size: 11px; padding: 5px;
@@ -52,7 +52,7 @@
   </head>
   <body>
 
-    <div id="version-badge">v9.2</div>
+    <div id="version-badge">v10.0 SINGLE</div>
     <div id="debug-log">System Ready.</div>
 
     <div id="status-overlay">
@@ -60,13 +60,13 @@
     </div>
 
     <div id="start-screen">
-      <h1>Art Gallery</h1>
-      <p>3.8MB Download</p>
+      <h1>Single Target</h1>
+      <p>kites.mind (Tiny File)</p>
       <button id="start-button">START</button>
     </div>
 
     <a-scene 
-      mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; filterMinCF:0.0001; filterBeta: 0.001;" 
+      mindar-image="imageTargetSrc: ./kites.mind; autoStart: false; filterMinCF:0.0001; filterBeta: 0.001;" 
       color-space="sRGB" 
       renderer="colorManagement: true, physicallyCorrectLights" 
       vr-mode-ui="enabled: false" 
@@ -78,7 +78,7 @@
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <a-entity mindar-image-target="targetIndex: 4">
+      <a-entity mindar-image-target="targetIndex: 0">
         <a-plane src="#v-kites" position="0 0 0" height="1.33" width="1" rotation="0 0 0" opacity="1"></a-plane>
       </a-entity>
     </a-scene>
@@ -93,8 +93,7 @@
 
       function log(msg) { logBox.innerHTML = "> " + msg + "<br>" + logBox.innerHTML; }
       function setStatus(msg) { statusText.innerText = msg; }
-
-      // TIMER LOGIC
+      
       let loadTimer = null;
       let seconds = 0;
 
@@ -103,7 +102,7 @@
       startButton.addEventListener('click', async () => {
         log("Button Clicked.");
         startButton.disabled = true;
-        startButton.innerText = "Connecting...";
+        startButton.innerText = "CONNECTING...";
         
         // 1. Camera Kickstart
         try {
@@ -119,14 +118,11 @@
         startScreen.style.display = 'none';
         
         // 2. Start Timer
-        setStatus("Downloading Map... (0s)");
+        setStatus("Downloading kites.mind... (0s)");
         loadTimer = setInterval(() => {
           seconds++;
-          setStatus(`Downloading Map... (${seconds}s)`);
-          if(seconds > 60) log("⚠️ Download taking long. Check internet.");
+          setStatus(`Downloading kites.mind... (${seconds}s)`);
         }, 1000);
-
-        log("Requesting AR Engine...");
 
         // 3. Wake Video
         kiteVideo.muted = true;
@@ -138,7 +134,7 @@
 
       // AR READY
       sceneEl.addEventListener("arReady", () => {
-        clearInterval(loadTimer); // Stop timer
+        clearInterval(loadTimer); 
         log(`🚀 ENGINE READY! (Took ${seconds}s)`);
         setStatus("Scan Kites Painting");
       });
@@ -146,7 +142,7 @@
       sceneEl.addEventListener("arError", (e) => {
         clearInterval(loadTimer);
         log("❌ LOAD FAILED: " + JSON.stringify(e));
-        setStatus("Download Failed");
+        setStatus("Download Failed (Check File Name)");
       });
       
       // FOUND
