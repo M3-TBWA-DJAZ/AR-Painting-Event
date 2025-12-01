@@ -1,96 +1,129 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>AR Event v3.6</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Gallery Event v5.3 (3:4 Portrait)</title>
+    
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     
     <style>
-      body { margin: 0; overflow: hidden; }
+      body { margin: 0; overflow: hidden; font-family: sans-serif; }
+      
       #start-screen {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: black; z-index: 9999;
         display: flex; flex-direction: column; align-items: center; justify-content: center;
-        color: white; font-family: sans-serif;
+        text-align: center; color: white;
       }
+      
       button { 
-        padding: 15px 30px; font-size: 20px; margin-top: 20px; 
-        background: #00D1B2; color: white; border: none; border-radius: 5px; 
+        padding: 15px 40px; font-size: 18px; margin-top: 20px; 
+        background: #FF4081; color: white; border: none; border-radius: 30px; 
+        font-weight: bold; cursor: pointer;
       }
-      #version-badge {
-        position: fixed; top: 10px; right: 10px;
-        background: rgba(0, 255, 255, 0.8); color: black; /* CYAN BADGE */
-        padding: 5px 10px; font-weight: bold; font-family: monospace;
-        z-index: 1000; border-radius: 4px;
+
+      #scanning-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        pointer-events: none; display: none;
       }
-      #debug-log {
-        position: fixed; bottom: 0; left: 0; width: 100%; height: 100px;
-        background: rgba(0, 0, 0, 0.5); color: #00FF00; 
-        pointer-events: none; z-index: 10000; overflow-y: scroll;
-        font-family: monospace; font-size: 12px; padding: 5px;
+      .scan-text {
+        position: absolute; bottom: 50px; left: 0; width: 100%;
+        text-align: center; color: white; font-size: 20px;
+        text-shadow: 2px 2px 4px black;
       }
     </style>
   </head>
   <body>
 
-    <div id="version-badge">v3.6 (Landscape)</div>
-    <div id="debug-log">System Ready. Waiting...</div>
-
     <div id="start-screen">
-      <h1>Magic Art</h1>
-      <button id="start-button">START EXPERIENCE</button>
+      <h1>Art Gallery</h1>
+      <p>3:4 Portrait Mode</p>
+      <button id="start-button">ENTER GALLERY</button>
+    </div>
+
+    <div id="scanning-overlay">
+      <div class="scan-text">Scanning...</div>
     </div>
 
     <a-scene 
-      mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; filterMinCF:0.0001; filterBeta: 0.001;" 
-      color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" 
-      vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+      mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; filterMinCF:0.0001; filterBeta: 0.001; uiScanning: #scanning-overlay;" 
+      color-space="sRGB" 
+      renderer="colorManagement: true, physicallyCorrectLights" 
+      vr-mode-ui="enabled: false" 
+      device-orientation-permission-ui="enabled: false">
       
       <a-assets>
-        <video id="art-video" src="./video.mp4" preload="auto" loop crossorigin="anonymous" playsinline webkit-playsinline></video>
+        <video id="v-animatron" src="./animatron.mp4" preload="auto" loop crossorigin="anonymous" playsinline webkit-playsinline></video>
+        <video id="v-beach"     src="./beach.mp4"     preload="auto" loop crossorigin="anonymous" playsinline webkit-playsinline></video>
+        <video id="v-beacon"    src="./beacon.mp4"    preload="auto" loop crossorigin="anonymous" playsinline webkit-playsinline></video>
+        <video id="v-butterfly" src="./butterfly.mp4" preload="auto" loop crossorigin="anonymous" playsinline webkit-playsinline></video>
+        <video id="v-kites"     src="./kites.mp4"     preload="auto" loop crossorigin="anonymous" playsinline webkit-playsinline></video>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
       <a-entity mindar-image-target="targetIndex: 0">
-        <a-plane 
-          src="#art-video" 
-          position="0 0 0" 
-          height="0.5625" 
-          width="1" 
-          rotation="0 0 0"
-          opacity="1">
-        </a-plane>
+        <a-plane src="#v-animatron" position="0 0 0" height="1.33" width="1" rotation="0 0 0" opacity="1"></a-plane>
       </a-entity>
+
+      <a-entity mindar-image-target="targetIndex: 1">
+        <a-plane src="#v-beach" position="0 0 0" height="1.33" width="1" rotation="0 0 0" opacity="1"></a-plane>
+      </a-entity>
+
+      <a-entity mindar-image-target="targetIndex: 2">
+        <a-plane src="#v-beacon" position="0 0 0" height="1.33" width="1" rotation="0 0 0" opacity="1"></a-plane>
+      </a-entity>
+
+      <a-entity mindar-image-target="targetIndex: 3">
+        <a-plane src="#v-butterfly" position="0 0 0" height="1.33" width="1" rotation="0 0 0" opacity="1"></a-plane>
+      </a-entity>
+
+      <a-entity mindar-image-target="targetIndex: 4">
+        <a-plane src="#v-kites" position="0 0 0" height="1.33" width="1" rotation="0 0 0" opacity="1"></a-plane>
+      </a-entity>
+
     </a-scene>
 
     <script>
-      const logBox = document.getElementById('debug-log');
-      function log(msg) { logBox.innerHTML += "<br>" + msg; }
-
       const startButton = document.getElementById('start-button');
       const startScreen = document.getElementById('start-screen');
       const sceneEl = document.querySelector('a-scene');
-      const video = document.getElementById('art-video');
-      const target = document.querySelector('[mindar-image-target]');
+
+      const videos = [
+        document.getElementById('v-animatron'), 
+        document.getElementById('v-beach'),     
+        document.getElementById('v-beacon'),    
+        document.getElementById('v-butterfly'), 
+        document.getElementById('v-kites')      
+      ];
 
       startButton.addEventListener('click', () => {
         startScreen.style.display = 'none';
-        video.play().then(() => { video.pause(); video.currentTime = 0; }).catch((e) => { log("Perms Error: " + e); });
+        
+        // Wake up all videos
+        videos.forEach(v => {
+          v.play().then(() => {
+            v.pause();
+            v.currentTime = 0;
+          }).catch((e) => console.log("Perms error: " + e));
+        });
+
         sceneEl.setAttribute('mindar-image', 'autoStart: true');
-        log("AR Engine Starting...");
       });
 
-      target.addEventListener("targetFound", event => {
-        log("Found! Playing...");
-        video.play();
-      });
+      for (let i = 0; i < videos.length; i++) {
+        const target = document.querySelector(`[mindar-image-target="targetIndex: ${i}"]`);
+        
+        target.addEventListener("targetFound", event => {
+          videos.forEach(v => v.pause());
+          videos[i].play();
+        });
 
-      target.addEventListener("targetLost", event => {
-        log("Lost. Pausing...");
-        video.pause();
-      });
+        target.addEventListener("targetLost", event => {
+          videos[i].pause();
+        });
+      }
     </script>
   </body>
 </html>
