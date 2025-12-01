@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>Connection Test v9.0</title>
+    <title>Gallery v9.2 (Timer)</title>
     
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
@@ -11,21 +11,19 @@
       body { margin: 0; overflow: hidden; font-family: sans-serif; background: black; }
       .mindar-ui-loading { display: none !important; }
 
-      /* VERSION BADGE */
       #version-badge {
         position: fixed; top: 10px; right: 10px;
-        background: orange; color: black;
+        background: #00FF00; color: black;
         padding: 5px 10px; font-weight: bold; font-family: monospace;
         z-index: 10001; border: 2px solid white;
       }
 
       /* DEBUG LOG */
       #debug-log {
-        position: fixed; top: 0; left: 0; width: 100%; height: 120px;
-        background: rgba(0, 0, 0, 0.8); color: cyan; 
+        position: fixed; top: 0; left: 0; width: 100%; height: 80px;
+        background: rgba(0, 0, 0, 0.7); color: lime; 
         pointer-events: none; z-index: 10000; 
         overflow-y: scroll; font-family: monospace; font-size: 11px; padding: 5px;
-        border-bottom: 1px solid cyan;
       }
 
       /* START SCREEN */
@@ -54,17 +52,17 @@
   </head>
   <body>
 
-    <div id="version-badge">v9.0 TEST</div>
-    <div id="debug-log">System Ready. Waiting for file check...</div>
+    <div id="version-badge">v9.2</div>
+    <div id="debug-log">System Ready.</div>
 
     <div id="status-overlay">
-      <div id="status-text" class="status-badge">...</div>
+      <div id="status-text" class="status-badge">Waiting...</div>
     </div>
 
     <div id="start-screen">
-      <h1>File Checker</h1>
-      <p>We will test the 5MB download first.</p>
-      <button id="start-button">START CHECK</button>
+      <h1>Art Gallery</h1>
+      <p>3.8MB Download</p>
+      <button id="start-button">START</button>
     </div>
 
     <a-scene 
@@ -96,70 +94,69 @@
       function log(msg) { logBox.innerHTML = "> " + msg + "<br>" + logBox.innerHTML; }
       function setStatus(msg) { statusText.innerText = msg; }
 
-      // TRAP ERRORS
+      // TIMER LOGIC
+      let loadTimer = null;
+      let seconds = 0;
+
       window.addEventListener('error', (e) => log("❌ SYSTEM ERROR: " + e.message));
 
       startButton.addEventListener('click', async () => {
+        log("Button Clicked.");
         startButton.disabled = true;
-        startButton.innerText = "CHECKING FILE...";
+        startButton.innerText = "Connecting...";
         
-        // STEP 1: THE MANUAL FILE CHECK
-        log("1. Checking 'targets.mind'...");
-        setStatus("Testing Connection...");
-
-        try {
-          const response = await fetch('./targets.mind');
-          
-          if (!response.ok) {
-            // IF THIS HAPPENS, THE FILE NAME IS WRONG
-            throw new Error(`Server replied: ${response.status} (Not Found)`);
-          }
-
-          const blob = await response.blob();
-          const sizeMB = (blob.size / (1024 * 1024)).toFixed(2);
-          
-          log(`✅ FILE FOUND! Size: ${sizeMB} MB`);
-          setStatus(`File OK (${sizeMB} MB). Starting AR...`);
-          
-          // STEP 2: IF FILE EXISTS, START CAMERA
-          startAR();
-
-        } catch (error) {
-          log("❌ CRITICAL FAILURE: " + error.message);
-          setStatus("FILE NOT FOUND (404)");
-          startButton.style.background = "red";
-          startButton.innerText = "FAILED";
-          alert("Error: GitHub cannot find 'targets.mind'. Check spelling!");
-        }
-      });
-
-      async function startAR() {
-        // Request Camera
+        // 1. Camera Kickstart
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
           stream.getTracks().forEach(track => track.stop());
+          log("✅ Camera Permission OK.");
         } catch (err) {
           log("❌ Camera Denied.");
+          alert("Please allow camera access.");
           return;
         }
 
         startScreen.style.display = 'none';
         
-        // Wake Video
+        // 2. Start Timer
+        setStatus("Downloading Map... (0s)");
+        loadTimer = setInterval(() => {
+          seconds++;
+          setStatus(`Downloading Map... (${seconds}s)`);
+          if(seconds > 60) log("⚠️ Download taking long. Check internet.");
+        }, 1000);
+
+        log("Requesting AR Engine...");
+
+        // 3. Wake Video
         kiteVideo.muted = true;
         kiteVideo.play().then(() => { kiteVideo.pause(); kiteVideo.currentTime=0; }).catch(()=>{});
 
-        // Start Engine
+        // 4. Start AR
         sceneEl.setAttribute('mindar-image', 'autoStart: true');
-        log("AR Engine Requested...");
-      }
+      });
 
-      // AR EVENTS
+      // AR READY
       sceneEl.addEventListener("arReady", () => {
-        log("🚀 ENGINE READY! SCAN NOW.");
+        clearInterval(loadTimer); // Stop timer
+        log(`🚀 ENGINE READY! (Took ${seconds}s)`);
         setStatus("Scan Kites Painting");
       });
+
+      sceneEl.addEventListener("arError", (e) => {
+        clearInterval(loadTimer);
+        log("❌ LOAD FAILED: " + JSON.stringify(e));
+        setStatus("Download Failed");
+      });
       
+      // FOUND
+      const target = document.querySelector('[mindar-image-target]');
+      target.addEventListener("targetFound", () => {
+        log("✅ TARGET FOUND");
+        setStatus("Playing Video...");
+        kiteVideo.muted = false;
+        kiteVideo.play();
+      });
     </script>
   </body>
 </html>
