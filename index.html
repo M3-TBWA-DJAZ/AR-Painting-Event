@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>Gallery Event v5.3 (3:4 Portrait)</title>
+    <title>Gallery Debug v5.4</title>
     
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
@@ -23,22 +23,34 @@
         font-weight: bold; cursor: pointer;
       }
 
+      /* SCANNING OVERLAY */
       #scanning-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         pointer-events: none; display: none;
       }
       .scan-text {
-        position: absolute; bottom: 50px; left: 0; width: 100%;
+        position: absolute; bottom: 120px; left: 0; width: 100%;
         text-align: center; color: white; font-size: 20px;
         text-shadow: 2px 2px 4px black;
+      }
+
+      /* DEBUG CONSOLE (The Safety Net) */
+      #debug-log {
+        position: fixed; bottom: 0; left: 0; width: 100%; height: 100px;
+        background: rgba(0, 0, 0, 0.7); color: #00FF00; 
+        pointer-events: none; z-index: 10000; overflow-y: scroll;
+        font-family: monospace; font-size: 11px; padding: 5px;
+        border-top: 2px solid #FF4081;
       }
     </style>
   </head>
   <body>
 
+    <div id="debug-log">System Initialized. Waiting for Start...</div>
+
     <div id="start-screen">
       <h1>Art Gallery</h1>
-      <p>3:4 Portrait Mode</p>
+      <p>Debug Mode Active</p>
       <button id="start-button">ENTER GALLERY</button>
     </div>
 
@@ -86,6 +98,17 @@
     </a-scene>
 
     <script>
+      // LOGGING FUNCTION
+      const logBox = document.getElementById('debug-log');
+      function log(msg) { 
+        logBox.innerHTML = msg + "<br>" + logBox.innerHTML; 
+      }
+      
+      // Catch Global Errors
+      window.onerror = function(message, source, lineno, colno, error) {
+        log("❌ SYSTEM ERROR: " + message);
+      };
+
       const startButton = document.getElementById('start-button');
       const startScreen = document.getElementById('start-screen');
       const sceneEl = document.querySelector('a-scene');
@@ -99,31 +122,44 @@
       ];
 
       startButton.addEventListener('click', () => {
+        log("Button Clicked. Requesting Camera...");
         startScreen.style.display = 'none';
         
-        // Wake up all videos
-        videos.forEach(v => {
+        // Wake up videos
+        videos.forEach((v, index) => {
           v.play().then(() => {
             v.pause();
             v.currentTime = 0;
-          }).catch((e) => console.log("Perms error: " + e));
+            log(`Video ${index} Ready.`);
+          }).catch((e) => log(`⚠️ Video ${index} Blocked: ${e}`));
         });
 
         sceneEl.setAttribute('mindar-image', 'autoStart: true');
       });
 
+      // Target Listeners
       for (let i = 0; i < videos.length; i++) {
         const target = document.querySelector(`[mindar-image-target="targetIndex: ${i}"]`);
         
         target.addEventListener("targetFound", event => {
+          log(`✅ FOUND Target ${i}`);
           videos.forEach(v => v.pause());
           videos[i].play();
         });
 
         target.addEventListener("targetLost", event => {
+          log(`LOST Target ${i}`);
           videos[i].pause();
         });
       }
+      
+      sceneEl.addEventListener("arReady", (event) => {
+        log("🚀 AR SYSTEM READY! Point at painting.");
+      });
+      
+      sceneEl.addEventListener("arError", (event) => {
+        log("❌ CRITICAL: AR Failed. Check .mind file path.");
+      });
     </script>
   </body>
 </html>
