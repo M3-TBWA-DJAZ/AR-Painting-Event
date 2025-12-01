@@ -2,16 +2,16 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>Direct Start v14.0</title>
+    <title>Gallery Final v15.0</title>
     
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     
     <style>
-      body { margin: 0; overflow: hidden; font-family: sans-serif; background: #000033; }
+      body { margin: 0; overflow: hidden; font-family: sans-serif; background: black; }
       .mindar-ui-loading { display: none !important; }
 
-      /* FORCE CAMERA CANVAS TO BE VISIBLE */
+      /* Force Camera on top of background */
       .a-canvas { 
         z-index: 1 !important; 
         position: absolute; top: 0; left: 0; 
@@ -24,6 +24,7 @@
         text-align: center; color: white;
       }
 
+      /* PROGRESS BAR */
       #loader-container {
         width: 80%; height: 10px; background: #333; border-radius: 5px;
         margin-top: 20px; overflow: hidden;
@@ -45,22 +46,23 @@
         box-shadow: 0 0 15px #00D1B2;
       }
 
+      /* Small, discreet debug log at the top */
       #debug-log {
-        position: fixed; top: 0; left: 0; width: 100%; height: 120px;
-        background: rgba(0,0,0,0.8); color: lime; 
-        font-family: monospace; font-size: 11px; 
+        position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+        background: rgba(0,0,0,0.5); color: #00FF00; 
+        font-family: monospace; font-size: 10px; 
         pointer-events: none; z-index: 99999;
-        overflow-y: scroll; padding: 5px; border-bottom: 2px solid lime;
+        overflow-y: scroll; padding: 5px;
       }
     </style>
   </head>
   <body>
 
-    <div id="debug-log">System Initializing...</div>
+    <div id="debug-log">System Ready.</div>
 
     <div id="start-screen">
       <h1>Art Gallery</h1>
-      <p>Pre-loading kites.mind...</p>
+      <p>Loading Assets...</p>
       
       <div id="loader-container"><div id="loader-bar"></div></div>
       <div id="loader-text">0%</div>
@@ -111,8 +113,8 @@
           bar.style.width = "100%";
           txt.innerText = "Ready!";
           btn.classList.add("ready");
-          btn.innerText = "START CAMERA";
-          log("File Cached.");
+          btn.innerText = "START EXPERIENCE";
+          log("Assets Cached.");
         } else {
           txt.innerText = "Error 404"; bar.style.background = "red";
           log("❌ 404: File not found.");
@@ -124,58 +126,56 @@
       btn.addEventListener('click', async () => {
         
         // A. WAKE VIDEO
-        log("1. Waking Video...");
         const v = document.getElementById('v-kites');
         try {
           v.muted = true; await v.play(); v.pause(); v.currentTime = 0;
-          log("✅ Video Ready.");
         } catch (e) { log("⚠️ Video Warn: " + e.message); }
 
         // B. REQUEST CAMERA
-        log("2. Requesting Permission...");
+        btn.innerText = "ALLOW CAMERA...";
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-          log("✅ Permission Granted.");
+          log("✅ Camera Access.");
           stream.getTracks().forEach(track => track.stop());
         } catch (err) {
-          log("❌ Permission Denied.");
           alert("Permission Required");
           return;
         }
 
-        // C. DIRECT START (The Fix)
-        log("3. Starting AR Engine...");
+        // C. DIRECT START
         document.getElementById('start-screen').style.display = 'none';
-
-        // Wait a tiny bit for the DOM to settle
+        
         setTimeout(() => {
           const mindSystem = sceneEl.systems["mindar-image-system"];
           if (mindSystem) {
-            mindSystem.start(); // <--- DIRECT COMMAND
-            log("🚀 Start Command Sent.");
+            mindSystem.start(); 
+            log("🚀 Engine Started.");
           } else {
-            log("❌ Error: AR System not found.");
-            // Fallback
             sceneEl.setAttribute('mindar-image', 'autoStart: true');
           }
         }, 100);
       });
 
-      // --- 3. AR EVENTS ---
-      sceneEl.addEventListener("arReady", () => { 
-        log("📷 CAMERA ACTIVE! Scan now."); 
-      });
+      // --- 3. EVENTS ---
+      sceneEl.addEventListener("arReady", () => { log("📷 Scan the Painting."); });
       
-      sceneEl.addEventListener("arError", (e) => {
-        log("❌ AR ERROR: " + JSON.stringify(e));
+      const target = document.querySelector('[mindar-image-target]');
+      const v = document.getElementById('v-kites');
+
+      // FOUND
+      target.addEventListener("targetFound", () => {
+        log("✅ Found!");
+        v.muted = false; 
+        v.play();
       });
 
-      const target = document.querySelector('[mindar-image-target]');
-      target.addEventListener("targetFound", () => {
-        log("✅ TARGET FOUND!");
-        const v = document.getElementById('v-kites');
-        v.muted = false; v.play();
+      // LOST (The Fix!)
+      target.addEventListener("targetLost", () => {
+        log("❌ Lost Target.");
+        v.pause();
+        // Optional: v.currentTime = 0; // Uncomment this to reset video to start every time
       });
+
     </script>
   </body>
 </html>
