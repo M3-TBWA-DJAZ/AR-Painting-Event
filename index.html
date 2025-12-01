@@ -2,16 +2,28 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>Gallery Stability v6.0</title>
+    <title>Gallery v7.0 (Universal)</title>
     
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     
     <style>
-      body { margin: 0; overflow: hidden; font-family: sans-serif; }
+      body { margin: 0; overflow: hidden; font-family: sans-serif; background: black; }
       
-      /* HIDE DEFAULT SPINNER */
+      /* HIDE SPINNER */
       .mindar-ui-loading { display: none !important; }
+
+      /* DEBUG LOG - MOVED TO TOP & SMALLER */
+      #debug-log {
+        position: fixed; top: 0; left: 0; width: 100%; height: 80px;
+        background: rgba(0, 0, 0, 0.6); 
+        color: lime; 
+        pointer-events: none; /* Allows clicking through it */
+        z-index: 10000; 
+        overflow-y: scroll;
+        font-family: monospace; font-size: 10px; padding: 5px;
+        border-bottom: 1px solid lime;
+      }
 
       /* START SCREEN */
       #start-screen {
@@ -21,59 +33,37 @@
         text-align: center; color: white;
       }
       
+      /* BUTTON - BIG & CLEAR */
       button { 
-        padding: 15px 40px; font-size: 18px; margin-top: 20px; 
-        background: #FF4081; color: white; border: none; border-radius: 30px; 
-        font-weight: bold; cursor: pointer;
+        padding: 20px 50px; font-size: 22px; margin-top: 40px; 
+        background: #00D1B2; color: white; border: 2px solid white; border-radius: 50px; 
+        font-weight: bold; cursor: pointer; box-shadow: 0 0 15px rgba(0, 209, 178, 0.5);
       }
+      button:active { transform: scale(0.95); }
 
-      /* WARNING BOX FOR CHROME ON IOS */
-      #browser-warning {
-        display: none;
-        background: #ffcc00; color: black; padding: 15px;
-        margin-bottom: 20px; border-radius: 10px; font-weight: bold;
-        max-width: 80%;
-      }
-
-      /* SCANNING / LOADING STATUS */
+      /* STATUS BADGE */
       #status-overlay {
-        position: fixed; top: 10%; left: 0; width: 100%;
+        position: fixed; bottom: 50px; left: 0; width: 100%;
         text-align: center; pointer-events: none; z-index: 500;
       }
       .status-badge {
-        background: rgba(0,0,0,0.7); color: white;
-        padding: 10px 20px; border-radius: 20px;
-        font-size: 18px; display: inline-block;
-      }
-
-      /* TALL DEBUG CONSOLE */
-      #debug-log {
-        position: fixed; bottom: 0; left: 0; width: 100%; height: 40%; /* Taller! */
-        background: rgba(0, 0, 0, 0.9); 
-        color: #00FF00; 
-        pointer-events: none; 
-        z-index: 999999; 
-        overflow-y: scroll;
-        font-family: monospace; font-size: 11px; padding: 10px;
-        border-top: 2px solid red;
-        white-space: pre-wrap;
+        background: rgba(0,0,0,0.8); color: white;
+        padding: 8px 16px; border-radius: 20px;
+        font-size: 16px; display: inline-block; border: 1px solid white;
       }
     </style>
   </head>
   <body>
 
-    <div id="debug-log">System Initializing...</div>
+    <div id="debug-log">System Ready. v7.0</div>
 
     <div id="status-overlay">
       <div id="status-text" class="status-badge">Waiting to Start...</div>
     </div>
 
     <div id="start-screen">
-      <h1>Art Gallery v6.0</h1>
-      
-      <div id="browser-warning">⚠️ It looks like you are using Chrome on iPhone. This often fails. Please switch to <b>Safari</b>.</div>
-
-      <p>Scroll down to see logs 👇</p>
+      <h1>Art Gallery</h1>
+      <p style="color: #ccc;">Universal Mode</p>
       <button id="start-button">START CAMERA</button>
     </div>
 
@@ -106,27 +96,16 @@
       const logBox = document.getElementById('debug-log');
       const statusText = document.getElementById('status-text');
 
-      function log(msg) { 
-        const time = new Date().toLocaleTimeString();
-        logBox.innerHTML = `[${time}] ${msg}<br>` + logBox.innerHTML; 
-      }
+      function log(msg) { logBox.innerHTML = "> " + msg + "<br>" + logBox.innerHTML; }
       function setStatus(msg) { statusText.innerText = msg; }
 
-      // 1. DETECT BROWSER ISSUES
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-      const isChrome = /CriOS/.test(navigator.userAgent);
-      
-      if (isIOS && isChrome) {
-        document.getElementById('browser-warning').style.display = 'block';
-        log("⚠️ WARNING: Chrome on iOS detected. Performance may be poor.");
-      }
-
-      window.addEventListener('error', (e) => log("❌ SYS ERROR: " + e.message));
+      // 1. ERROR CATCHING
+      window.addEventListener('error', (e) => log("❌ SYS: " + e.message));
 
       const startButton = document.getElementById('start-button');
       const startScreen = document.getElementById('start-screen');
       const sceneEl = document.querySelector('a-scene');
-
+      
       const videos = [
         document.getElementById('v-animatron'), 
         document.getElementById('v-beach'),     
@@ -135,68 +114,82 @@
         document.getElementById('v-kites')      
       ];
 
-      startButton.addEventListener('click', () => {
-        log("Button Clicked. Attempting wake-up...");
+      startButton.addEventListener('click', async () => {
+        log("Button Clicked.");
+        startButton.innerText = "LOADING...";
+        startButton.disabled = true;
+
+        // 2. MANUAL CAMERA REQUEST (Fixes Chrome iOS hang)
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+          log("✅ Camera Permission Granted.");
+          // We don't need the stream here, we just needed the permission. 
+          // Stop tracks to release camera for MindAR
+          stream.getTracks().forEach(track => track.stop());
+        } catch (err) {
+          log("❌ CAMERA BLOCKED: " + err);
+          alert("Please allow camera access to continue.");
+          startButton.disabled = false;
+          startButton.innerText = "TRY AGAIN";
+          return;
+        }
+
         startScreen.style.display = 'none';
-        setStatus("Initializing Camera...");
-        
-        // LIGHTWEIGHT WAKE UP
-        // We only play/pause briefly to get "blessed" by the browser
-        videos.forEach((v, i) => {
+        setStatus("Initializing Engine...");
+
+        // 3. WAKE UP VIDEOS (Silent Start)
+        videos.forEach(v => {
+          v.muted = true; // Chrome loves muted videos
           v.play().then(() => {
             v.pause();
-            log(`Video ${i} permissions granted.`);
-          }).catch((e) => {
-            log(`⚠️ Video ${i} failed wake-up: ${e}`);
-          });
+            v.currentTime = 0;
+          }).catch(e => log("Video Wakeup: " + e));
         });
 
+        // 4. START AR
         sceneEl.setAttribute('mindar-image', 'autoStart: true');
       });
 
-      // LOOP LISTENERS
+      // LOOP TARGETS
       for (let i = 0; i < videos.length; i++) {
         const target = document.querySelector(`[mindar-image-target="targetIndex: ${i}"]`);
         
         target.addEventListener("targetFound", event => {
-          log(`✅ FOUND Target ${i}`);
-          setStatus(`Loading Video ${i}...`);
+          log(`✅ FOUND ${i}`);
+          setStatus(`Loading Art ${i}...`);
           
-          // Stop others
-          videos.forEach((v, index) => { if(index !== i) v.pause(); });
+          videos.forEach((v, idx) => {
+            if (idx !== i) { v.pause(); } // Pause others
+          });
 
-          // Play Current
           const vid = videos[i];
-          const playPromise = vid.play();
-          
-          if (playPromise !== undefined) {
-            playPromise.then(_ => {
-              setStatus(`Playing Video ${i}`);
-              log(`Video ${i} started.`);
-            })
-            .catch(error => {
-              setStatus("Video Error");
-              log(`❌ Video ${i} Play Error: ${error}`);
-            });
-          }
+          // Try playing with sound, fallback to mute if blocked
+          vid.muted = false;
+          vid.play().then(() => {
+            setStatus(`Playing Art ${i}`);
+          }).catch(e => {
+            log("Autoplay blocked, trying muted...");
+            vid.muted = true;
+            vid.play();
+            setStatus(`Playing (Muted)`);
+          });
         });
 
         target.addEventListener("targetLost", event => {
-          log(`LOST Target ${i}`);
+          log(`LOST ${i}`);
           setStatus("Scanning...");
           videos[i].pause();
         });
       }
       
       sceneEl.addEventListener("arReady", () => {
-        log("🚀 AR ENGINE RUNNING. Ready to scan.");
-        setStatus("Scan a Painting");
+        log("🚀 ENGINE READY");
+        setStatus("Point at a Painting");
       });
       
       sceneEl.addEventListener("arError", (e) => {
-        log("❌ CRITICAL: AR Engine Failed.");
-        log("Detail: " + JSON.stringify(e));
-        setStatus("CRITICAL ERROR");
+        log("❌ CRITICAL: " + JSON.stringify(e));
+        setStatus("ERROR - Check Logs");
       });
     </script>
   </body>
