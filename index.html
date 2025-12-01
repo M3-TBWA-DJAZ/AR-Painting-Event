@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>Gallery v7.0 (Universal)</title>
+    <title>Kites Test v8.0</title>
     
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
@@ -13,16 +13,20 @@
       /* HIDE SPINNER */
       .mindar-ui-loading { display: none !important; }
 
-      /* DEBUG LOG - MOVED TO TOP & SMALLER */
+      /* PERMANENT VERSION BADGE */
+      #version-badge {
+        position: fixed; top: 10px; right: 10px;
+        background: yellow; color: black;
+        padding: 5px 10px; font-weight: bold; font-family: monospace;
+        z-index: 10001; border: 2px solid black;
+      }
+
+      /* DEBUG LOG */
       #debug-log {
-        position: fixed; top: 0; left: 0; width: 100%; height: 80px;
-        background: rgba(0, 0, 0, 0.6); 
-        color: lime; 
-        pointer-events: none; /* Allows clicking through it */
-        z-index: 10000; 
-        overflow-y: scroll;
-        font-family: monospace; font-size: 10px; padding: 5px;
-        border-bottom: 1px solid lime;
+        position: fixed; top: 0; left: 0; width: 60%; height: 100px;
+        background: rgba(0, 0, 0, 0.6); color: lime; 
+        pointer-events: none; z-index: 10000; 
+        overflow-y: scroll; font-family: monospace; font-size: 10px; padding: 5px;
       }
 
       /* START SCREEN */
@@ -33,38 +37,36 @@
         text-align: center; color: white;
       }
       
-      /* BUTTON - BIG & CLEAR */
       button { 
         padding: 20px 50px; font-size: 22px; margin-top: 40px; 
-        background: #00D1B2; color: white; border: 2px solid white; border-radius: 50px; 
-        font-weight: bold; cursor: pointer; box-shadow: 0 0 15px rgba(0, 209, 178, 0.5);
+        background: #00D1B2; color: white; border-radius: 50px; border: none;
+        font-weight: bold; cursor: pointer;
       }
-      button:active { transform: scale(0.95); }
 
-      /* STATUS BADGE */
+      /* STATUS TEXT */
       #status-overlay {
         position: fixed; bottom: 50px; left: 0; width: 100%;
         text-align: center; pointer-events: none; z-index: 500;
       }
       .status-badge {
         background: rgba(0,0,0,0.8); color: white;
-        padding: 8px 16px; border-radius: 20px;
-        font-size: 16px; display: inline-block; border: 1px solid white;
+        padding: 8px 16px; border-radius: 20px; font-size: 16px; border: 1px solid white;
       }
     </style>
   </head>
   <body>
 
-    <div id="debug-log">System Ready. v7.0</div>
+    <div id="version-badge">v8.0 KITES</div>
+    <div id="debug-log">System Ready.</div>
 
     <div id="status-overlay">
-      <div id="status-text" class="status-badge">Waiting to Start...</div>
+      <div id="status-text" class="status-badge">Waiting...</div>
     </div>
 
     <div id="start-screen">
-      <h1>Art Gallery</h1>
-      <p style="color: #ccc;">Universal Mode</p>
-      <button id="start-button">START CAMERA</button>
+      <h1>Kites Test</h1>
+      <p>Target Index: 4</p>
+      <button id="start-button">START</button>
     </div>
 
     <a-scene 
@@ -75,20 +77,14 @@
       device-orientation-permission-ui="enabled: false">
       
       <a-assets>
-        <video id="v-animatron" src="./animatron.mp4" preload="metadata" loop crossorigin="anonymous" playsinline webkit-playsinline></video>
-        <video id="v-beach"     src="./beach.mp4"     preload="metadata" loop crossorigin="anonymous" playsinline webkit-playsinline></video>
-        <video id="v-beacon"    src="./beacon.mp4"    preload="metadata" loop crossorigin="anonymous" playsinline webkit-playsinline></video>
-        <video id="v-butterfly" src="./butterfly.mp4" preload="metadata" loop crossorigin="anonymous" playsinline webkit-playsinline></video>
-        <video id="v-kites"     src="./kites.mp4"     preload="metadata" loop crossorigin="anonymous" playsinline webkit-playsinline></video>
+        <video id="v-kites" src="./kites.mp4" preload="metadata" loop crossorigin="anonymous" playsinline webkit-playsinline></video>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <a-entity mindar-image-target="targetIndex: 0"><a-plane src="#v-animatron" position="0 0 0" height="1.33" width="1" rotation="0 0 0" opacity="1"></a-plane></a-entity>
-      <a-entity mindar-image-target="targetIndex: 1"><a-plane src="#v-beach" position="0 0 0" height="1.33" width="1" rotation="0 0 0" opacity="1"></a-plane></a-entity>
-      <a-entity mindar-image-target="targetIndex: 2"><a-plane src="#v-beacon" position="0 0 0" height="1.33" width="1" rotation="0 0 0" opacity="1"></a-plane></a-entity>
-      <a-entity mindar-image-target="targetIndex: 3"><a-plane src="#v-butterfly" position="0 0 0" height="1.33" width="1" rotation="0 0 0" opacity="1"></a-plane></a-entity>
-      <a-entity mindar-image-target="targetIndex: 4"><a-plane src="#v-kites" position="0 0 0" height="1.33" width="1" rotation="0 0 0" opacity="1"></a-plane></a-entity>
+      <a-entity mindar-image-target="targetIndex: 4">
+        <a-plane src="#v-kites" position="0 0 0" height="1.33" width="1" rotation="0 0 0" opacity="1"></a-plane>
+      </a-entity>
 
     </a-scene>
 
@@ -99,98 +95,75 @@
       function log(msg) { logBox.innerHTML = "> " + msg + "<br>" + logBox.innerHTML; }
       function setStatus(msg) { statusText.innerText = msg; }
 
-      // 1. ERROR CATCHING
-      window.addEventListener('error', (e) => log("❌ SYS: " + e.message));
+      // ERROR TRAP
+      window.addEventListener('error', (e) => log("❌ ERROR: " + e.message));
 
       const startButton = document.getElementById('start-button');
       const startScreen = document.getElementById('start-screen');
       const sceneEl = document.querySelector('a-scene');
       
-      const videos = [
-        document.getElementById('v-animatron'), 
-        document.getElementById('v-beach'),     
-        document.getElementById('v-beacon'),    
-        document.getElementById('v-butterfly'), 
-        document.getElementById('v-kites')      
-      ];
+      // ONLY KITES
+      const kiteVideo = document.getElementById('v-kites');
 
       startButton.addEventListener('click', async () => {
         log("Button Clicked.");
         startButton.innerText = "LOADING...";
-        startButton.disabled = true;
-
-        // 2. MANUAL CAMERA REQUEST (Fixes Chrome iOS hang)
+        
+        // 1. Manual Camera Request
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-          log("✅ Camera Permission Granted.");
-          // We don't need the stream here, we just needed the permission. 
-          // Stop tracks to release camera for MindAR
+          log("✅ Camera Access Granted.");
           stream.getTracks().forEach(track => track.stop());
         } catch (err) {
-          log("❌ CAMERA BLOCKED: " + err);
-          alert("Please allow camera access to continue.");
-          startButton.disabled = false;
-          startButton.innerText = "TRY AGAIN";
+          log("❌ CAMERA DENIED: " + err);
+          alert("Allow Camera Access!");
           return;
         }
 
         startScreen.style.display = 'none';
-        setStatus("Initializing Engine...");
+        setStatus("Downloading 5MB Map...");
 
-        // 3. WAKE UP VIDEOS (Silent Start)
-        videos.forEach(v => {
-          v.muted = true; // Chrome loves muted videos
-          v.play().then(() => {
-            v.pause();
-            v.currentTime = 0;
-          }).catch(e => log("Video Wakeup: " + e));
-        });
+        // 2. Wake Up Video
+        kiteVideo.muted = true;
+        kiteVideo.play().then(() => {
+          kiteVideo.pause();
+          kiteVideo.currentTime = 0;
+          log("Video Ready.");
+        }).catch(e => log("Video Wakeup Warn: " + e));
 
-        // 4. START AR
+        // 3. Start Engine
         sceneEl.setAttribute('mindar-image', 'autoStart: true');
       });
 
-      // LOOP TARGETS
-      for (let i = 0; i < videos.length; i++) {
-        const target = document.querySelector(`[mindar-image-target="targetIndex: ${i}"]`);
-        
-        target.addEventListener("targetFound", event => {
-          log(`✅ FOUND ${i}`);
-          setStatus(`Loading Art ${i}...`);
-          
-          videos.forEach((v, idx) => {
-            if (idx !== i) { v.pause(); } // Pause others
-          });
-
-          const vid = videos[i];
-          // Try playing with sound, fallback to mute if blocked
-          vid.muted = false;
-          vid.play().then(() => {
-            setStatus(`Playing Art ${i}`);
-          }).catch(e => {
-            log("Autoplay blocked, trying muted...");
-            vid.muted = true;
-            vid.play();
-            setStatus(`Playing (Muted)`);
-          });
-        });
-
-        target.addEventListener("targetLost", event => {
-          log(`LOST ${i}`);
-          setStatus("Scanning...");
-          videos[i].pause();
-        });
-      }
-      
+      // AR READY EVENT
       sceneEl.addEventListener("arReady", () => {
-        log("🚀 ENGINE READY");
-        setStatus("Point at a Painting");
+        log("🚀 ENGINE STARTED!");
+        setStatus("Scan the Kites Painting");
       });
+
+      // TARGET FOUND
+      const kiteTarget = document.querySelector('[mindar-image-target="targetIndex: 4"]');
       
-      sceneEl.addEventListener("arError", (e) => {
-        log("❌ CRITICAL: " + JSON.stringify(e));
-        setStatus("ERROR - Check Logs");
+      kiteTarget.addEventListener("targetFound", event => {
+        log("✅ KITES FOUND");
+        setStatus("Loading Video...");
+        
+        kiteVideo.muted = false; // Try sound
+        kiteVideo.play().then(() => {
+          setStatus("Playing Kites");
+        }).catch(e => {
+          log("Audio blocked, muting...");
+          kiteVideo.muted = true;
+          kiteVideo.play();
+        });
       });
+
+      kiteTarget.addEventListener("targetLost", event => {
+        log("LOST KITES");
+        setStatus("Scanning...");
+        kiteVideo.pause();
+      });
+
     </script>
   </body>
 </html>
