@@ -2,179 +2,328 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>Gallery Final v15.0</title>
+    <title>Al Salam Bank Art Gallery</title>
     
+    <!-- BRAND FONTS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;700&display=swap" rel="stylesheet">
+
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     
     <style>
-      body { margin: 0; overflow: hidden; font-family: sans-serif; background: black; }
+      /* --- THEME SETTINGS --- */
+      :root {
+        --bg-color: #191c30;
+        --brand-color: #eb5a31;
+        --text-color: #c7b299;
+      }
+
+      body { 
+        margin: 0; overflow: hidden; 
+        font-family: 'Oswald', sans-serif; 
+        background: var(--bg-color); 
+      }
+      
+      /* Hide default AR loading spinner */
       .mindar-ui-loading { display: none !important; }
 
-      /* Force Camera on top of background */
+      /* Force Camera to visible layer */
       .a-canvas { 
         z-index: 1 !important; 
         position: absolute; top: 0; left: 0; 
       }
 
+      /* --- START SCREEN UI --- */
       #start-screen {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: #111; z-index: 999;
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        text-align: center; color: white;
+        background: var(--bg-color); 
+        z-index: 999;
+        display: flex; flex-direction: column; 
+        align-items: center; justify-content: center;
+        text-align: center;
+        transition: opacity 0.5s;
       }
 
-      /* PROGRESS BAR */
+      /* Copyright Top */
+      .copyright {
+        position: absolute; top: 20px;
+        font-size: 12px; color: white; opacity: 0.6;
+        letter-spacing: 1px; font-family: sans-serif;
+      }
+
+      h1 {
+        font-weight: 700; font-size: 42px; margin: 0;
+        color: var(--brand-color);
+        text-transform: uppercase; letter-spacing: 2px;
+      }
+
+      h2 {
+        font-weight: 300; font-size: 24px; margin: 5px 0 30px 0;
+        color: var(--text-color);
+        letter-spacing: 4px;
+      }
+
+      /* LOADING BAR */
       #loader-container {
-        width: 80%; height: 10px; background: #333; border-radius: 5px;
-        margin-top: 20px; overflow: hidden;
+        width: 60%; height: 4px; 
+        background: rgba(255,255,255,0.1); 
+        border-radius: 2px; margin-bottom: 10px;
+        overflow: hidden;
       }
       #loader-bar {
-        width: 0%; height: 100%; background: #00FF00; transition: width 0.2s;
+        width: 0%; height: 100%; 
+        background: var(--brand-color); 
+        transition: width 0.3s ease-out;
+        box-shadow: 0 0 10px var(--brand-color);
       }
-      #loader-text { margin-top: 10px; color: #aaa; font-size: 14px; }
-      
-      button { 
-        padding: 20px 50px; font-size: 20px; margin-top: 30px; 
-        background: #555; color: #aaa; border-radius: 50px; border: none;
-        font-weight: bold; cursor: not-allowed; pointer-events: none;
-        transition: 0.3s;
-      }
-      
-      button.ready {
-        background: #00D1B2; color: white; cursor: pointer; pointer-events: all;
-        box-shadow: 0 0 15px #00D1B2;
+      #loader-text { 
+        color: var(--text-color); font-size: 14px; 
+        margin-bottom: 30px; letter-spacing: 1px;
       }
 
-      /* Small, discreet debug log at the top */
-      #debug-log {
-        position: fixed; top: 0; left: 0; width: 100%; height: 60px;
-        background: rgba(0,0,0,0.5); color: #00FF00; 
-        font-family: monospace; font-size: 10px; 
-        pointer-events: none; z-index: 99999;
-        overflow-y: scroll; padding: 5px;
+      /* MAIN BUTTON */
+      button#start-button { 
+        padding: 18px 40px; font-size: 18px; 
+        background: #333; color: #666; /* Disabled State */
+        border: none; border-radius: 50px; 
+        font-family: 'Oswald', sans-serif; font-weight: 700; letter-spacing: 1px;
+        cursor: not-allowed; pointer-events: none;
+        transition: all 0.3s;
+        text-transform: uppercase;
       }
+      
+      /* Enabled State */
+      button#start-button.ready {
+        background: var(--brand-color); 
+        color: white; 
+        cursor: pointer; pointer-events: all;
+        box-shadow: 0 0 20px rgba(235, 90, 49, 0.6);
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse { 0% {transform: scale(1);} 50% {transform: scale(1.05);} 100% {transform: scale(1);} }
+
+      /* --- GUIDING MESSAGE (Replaces Console) --- */
+      #guide-overlay {
+        position: fixed; bottom: 40px; left: 0; width: 100%;
+        text-align: center; pointer-events: none; z-index: 500;
+      }
+      .guide-text {
+        display: inline-block;
+        background: rgba(25, 28, 48, 0.85); 
+        color: white;
+        padding: 12px 24px; border-radius: 30px;
+        font-size: 16px; letter-spacing: 1px;
+        border: 1px solid var(--brand-color);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        transition: opacity 0.3s;
+      }
+
+      /* --- FALLBACK BUTTON (Hidden by default) --- */
+      #fallback-btn {
+        display: none; position: absolute; bottom: 30px;
+        color: white; text-decoration: underline; background: none; border: none;
+        font-size: 14px; cursor: pointer; opacity: 0.7;
+      }
+
     </style>
   </head>
   <body>
 
-    <div id="debug-log">System Ready.</div>
-
-    <div id="start-screen">
-      <h1>Art Gallery</h1>
-      <p>Loading Assets...</p>
-      
-      <div id="loader-container"><div id="loader-bar"></div></div>
-      <div id="loader-text">0%</div>
-
-      <button id="start-button">PLEASE WAIT</button>
+    <!-- GUIDING MESSAGE BAR -->
+    <div id="guide-overlay">
+      <div id="guide-text" class="guide-text" style="opacity:0">Welcome</div>
     </div>
 
+    <!-- START SCREEN -->
+    <div id="start-screen">
+      <div class="copyright">This app belongs to Al Salam Bank</div>
+      
+      <h1>Al Salam Bank</h1>
+      <h2>ART GALLERY</h2>
+      
+      <div id="loader-container"><div id="loader-bar"></div></div>
+      <div id="loader-text">Initializing...</div>
+
+      <button id="start-button">LOADING...</button>
+
+      <!-- Safety Button if AR fails -->
+      <button id="fallback-btn" onclick="copyUrl()">Camera issue? Open in Browser</button>
+    </div>
+
+    <!-- AR SCENE -->
     <a-scene 
-      mindar-image="imageTargetSrc: ./kites.mind; autoStart: false; filterMinCF:0.0001; filterBeta: 0.001;" 
+      mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; filterMinCF:0.0001; filterBeta: 0.001;" 
       color-space="sRGB" 
       renderer="colorManagement: true, physicallyCorrectLights" 
       vr-mode-ui="enabled: false" 
       device-orientation-permission-ui="enabled: false">
       
       <a-assets>
-        <video id="v-kites" src="./kites.mp4" preload="metadata" loop crossorigin="anonymous" playsinline webkit-playsinline></video>
+        <!-- 5 VIDEOS (3:4 Ratio) -->
+        <video id="v-animatron" src="./animatron.mp4" preload="metadata" loop crossorigin="anonymous" playsinline webkit-playsinline></video>
+        <video id="v-beach"     src="./beach.mp4"     preload="metadata" loop crossorigin="anonymous" playsinline webkit-playsinline></video>
+        <video id="v-beacon"    src="./beacon.mp4"    preload="metadata" loop crossorigin="anonymous" playsinline webkit-playsinline></video>
+        <video id="v-butterfly" src="./butterfly.mp4" preload="metadata" loop crossorigin="anonymous" playsinline webkit-playsinline></video>
+        <video id="v-kites"     src="./kites.mp4"     preload="metadata" loop crossorigin="anonymous" playsinline webkit-playsinline></video>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <a-entity mindar-image-target="targetIndex: 0">
-        <a-plane src="#v-kites" position="0 0 0" height="1.33" width="1" rotation="0 0 0" opacity="1"></a-plane>
-      </a-entity>
+      <!-- TARGETS 0-4 (Height 1.33 for 3:4 Portrait) -->
+      <a-entity mindar-image-target="targetIndex: 0"><a-plane src="#v-animatron" position="0 0 0" height="1.33" width="1" rotation="0 0 0" opacity="1"></a-plane></a-entity>
+      <a-entity mindar-image-target="targetIndex: 1"><a-plane src="#v-beach" position="0 0 0" height="1.33" width="1" rotation="0 0 0" opacity="1"></a-plane></a-entity>
+      <a-entity mindar-image-target="targetIndex: 2"><a-plane src="#v-beacon" position="0 0 0" height="1.33" width="1" rotation="0 0 0" opacity="1"></a-plane></a-entity>
+      <a-entity mindar-image-target="targetIndex: 3"><a-plane src="#v-butterfly" position="0 0 0" height="1.33" width="1" rotation="0 0 0" opacity="1"></a-plane></a-entity>
+      <a-entity mindar-image-target="targetIndex: 4"><a-plane src="#v-kites" position="0 0 0" height="1.33" width="1" rotation="0 0 0" opacity="1"></a-plane></a-entity>
+
     </a-scene>
 
     <script>
-      const logBox = document.getElementById('debug-log');
+      // UI Elements
       const bar = document.getElementById('loader-bar');
       const txt = document.getElementById('loader-text');
       const btn = document.getElementById('start-button');
+      const guide = document.getElementById('guide-text');
       const sceneEl = document.querySelector('a-scene');
+      const fallbackBtn = document.getElementById('fallback-btn');
 
-      function log(msg) { logBox.innerHTML = "> " + msg + "<br>" + logBox.innerHTML; }
+      // Helper to show guide text
+      function showGuide(message) {
+        guide.innerText = message;
+        guide.style.opacity = 1;
+      }
 
-      // --- 1. DOWNLOADER ---
+      // --- 1. PRE-LOADER (The 3.8MB File) ---
       const xhr = new XMLHttpRequest();
-      xhr.open("GET", './kites.mind', true);
+      xhr.open("GET", './targets.mind', true); // ENSURE THIS FILE NAME IS CORRECT ON GITHUB
       xhr.responseType = "blob";
+      
       xhr.onprogress = (event) => {
         if (event.lengthComputable) {
           const percent = Math.round((event.loaded / event.total) * 100);
           bar.style.width = percent + "%";
-          txt.innerText = percent + "% Downloaded";
+          txt.innerText = "Downloading Assets... " + percent + "%";
         }
       };
+      
       xhr.onload = () => {
         if (xhr.status === 200) {
           bar.style.width = "100%";
-          txt.innerText = "Ready!";
+          txt.innerText = "Ready to explore";
           btn.classList.add("ready");
           btn.innerText = "START EXPERIENCE";
-          log("Assets Cached.");
         } else {
-          txt.innerText = "Error 404"; bar.style.background = "red";
-          log("❌ 404: File not found.");
+          txt.innerText = "Error: targets.mind not found";
+          bar.style.background = "red";
+          fallbackBtn.style.display = "block";
         }
+      };
+      
+      xhr.onerror = () => { 
+        txt.innerText = "Connection Error"; 
+        fallbackBtn.style.display = "block";
       };
       xhr.send(); 
 
-      // --- 2. START LOGIC ---
+      // --- 2. START BUTTON LOGIC ---
       btn.addEventListener('click', async () => {
+        btn.innerText = "ACCESSING CAMERA...";
         
-        // A. WAKE VIDEO
-        const v = document.getElementById('v-kites');
-        try {
-          v.muted = true; await v.play(); v.pause(); v.currentTime = 0;
-        } catch (e) { log("⚠️ Video Warn: " + e.message); }
+        // A. Wake up all videos (Silent play)
+        const videos = document.querySelectorAll('video');
+        videos.forEach(v => {
+          v.muted = true;
+          v.play().then(() => {
+            v.pause();
+            v.currentTime = 0;
+          }).catch(() => {});
+        });
 
-        // B. REQUEST CAMERA
-        btn.innerText = "ALLOW CAMERA...";
+        // B. Request Camera Permission
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-          log("✅ Camera Access.");
+          // Permission granted, release stream for AR engine
           stream.getTracks().forEach(track => track.stop());
         } catch (err) {
-          alert("Permission Required");
+          alert("Please allow camera access to view the gallery.");
+          btn.innerText = "PERMISSION DENIED";
+          fallbackBtn.style.display = "block";
           return;
         }
 
-        // C. DIRECT START
-        document.getElementById('start-screen').style.display = 'none';
-        
+        // C. Launch AR
+        document.getElementById('start-screen').style.opacity = 0;
         setTimeout(() => {
+          document.getElementById('start-screen').style.display = 'none';
+          
+          // Direct Engine Start
           const mindSystem = sceneEl.systems["mindar-image-system"];
           if (mindSystem) {
             mindSystem.start(); 
-            log("🚀 Engine Started.");
           } else {
             sceneEl.setAttribute('mindar-image', 'autoStart: true');
           }
-        }, 100);
+          
+          showGuide("Initializing...");
+        }, 500);
       });
 
-      // --- 3. EVENTS ---
-      sceneEl.addEventListener("arReady", () => { log("📷 Scan the Painting."); });
+      // --- 3. AR EVENTS ---
       
-      const target = document.querySelector('[mindar-image-target]');
-      const v = document.getElementById('v-kites');
-
-      // FOUND
-      target.addEventListener("targetFound", () => {
-        log("✅ Found!");
-        v.muted = false; 
-        v.play();
+      // Engine Ready
+      sceneEl.addEventListener("arReady", () => {
+        showGuide("Point your camera at a painting");
       });
 
-      // LOST (The Fix!)
-      target.addEventListener("targetLost", () => {
-        log("❌ Lost Target.");
-        v.pause();
-        // Optional: v.currentTime = 0; // Uncomment this to reset video to start every time
+      // Critical Error
+      sceneEl.addEventListener("arError", (e) => {
+        showGuide("Error: Camera failed to start");
+        document.getElementById('start-screen').style.display = 'flex';
+        document.getElementById('start-screen').style.opacity = 1;
+        txt.innerText = "Camera Error. Try switching browser.";
+        fallbackBtn.style.display = "block";
       });
+
+      // Target Found / Lost Logic
+      const targets = document.querySelectorAll('[mindar-image-target]');
+      
+      targets.forEach((target, index) => {
+        target.addEventListener("targetFound", () => {
+          showGuide(""); // Clear text to let them see art
+          
+          // Pause others
+          targets.forEach((t, i) => {
+            const v = document.querySelector(`#v-${['animatron','beach','beacon','butterfly','kites'][i]}`);
+            if (i !== index) v.pause();
+          });
+
+          // Play current
+          const vidId = ['animatron','beach','beacon','butterfly','kites'][index];
+          const vid = document.getElementById(`v-${vidId}`);
+          if(vid) {
+            vid.muted = false;
+            vid.play();
+          }
+        });
+
+        target.addEventListener("targetLost", () => {
+          // Pause video
+          const vidId = ['animatron','beach','beacon','butterfly','kites'][index];
+          const vid = document.getElementById(`v-${vidId}`);
+          if(vid) vid.pause();
+          
+          showGuide("Point at a painting");
+        });
+      });
+
+      // Fallback Button Logic
+      window.copyUrl = function() {
+        navigator.clipboard.writeText(window.location.href).then(() => {
+          alert("Link copied! Open Safari or Chrome and paste.");
+        });
+      };
 
     </script>
   </body>
